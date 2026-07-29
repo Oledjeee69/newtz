@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backend Developer — Portfolio</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="#">Dev<span>API</span></a>
+      <nav>
+        <a href="#about">Обо мне</a>
+        <a href="#stack">Стек</a>
+        <a href="#contact">Контакты</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" aria-label="Тема">◐</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <p class="hero__badge">Backend Developer</p>
+      <h1>Строю надёжные API и сервисы с AI-интеграцией</h1>
+      <p class="hero__text">
+        Python, FastAPI, PostgreSQL, Docker. Этот лендинг подключён к реальному backend API
+        с валидацией, rate limiting, логированием и AI-анализом обращений.
+      </p>
+      <a class="btn" href="#contact">Написать мне</a>
+    </section>
+
+    <section id="about" class="section container">
+      <h2>Обо мне</h2>
+      <p>
+        Разрабатываю backend-сервисы с упором на чистую архитектуру, обработку ошибок
+        и наблюдаемость. Люблю когда API документирован, а интеграции имеют fallback.
+      </p>
+    </section>
+
+    <section id="stack" class="section container cards">
+      <article class="card"><h3>FastAPI</h3><p>REST API, OpenAPI, Pydantic</p></article>
+      <article class="card"><h3>AI</h3><p>OpenAI + rule-based fallback</p></article>
+      <article class="card"><h3>Infra</h3><p>Docker, Railway, Gmail SMTP</p></article>
+    </section>
+
+    <section id="contact" class="section container">
+      <h2>Связаться</h2>
+      <form id="contactForm" class="form">
+        <div class="form__row">
+          <label>Имя<input name="name" required minlength="2" maxlength="100" placeholder="Иван" /></label>
+          <label>Телефон<input name="phone" required placeholder="+7 999 123-45-67" /></label>
+        </div>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
+        <label>Комментарий<textarea name="comment" required minlength="10" maxlength="2000" rows="5" placeholder="Расскажите о проекте..."></textarea></label>
+        <!-- honeypot: не website — браузеры автозаполняют его URL -->
+        <input type="text" name="company_fax" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button type="submit" class="btn" id="submitBtn">Отправить</button>
+        <p id="formMessage" class="form__message" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer container">
+    <p>© 2026 · Backend portfolio · <a href="/docs" target="_blank">API Docs</a></p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

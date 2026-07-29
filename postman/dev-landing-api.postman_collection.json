@@ -1,0 +1,40 @@
+{
+  "info": {
+    "name": "Dev Landing API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "Contact",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Иван Петров\",\n  \"phone\": \"+7 999 123-45-67\",\n  \"email\": \"ivan@example.com\",\n  \"comment\": \"Интересует сотрудничество по backend-проекту на FastAPI\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contact"
+      }
+    },
+    {
+      "name": "Metrics",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-Metrics-Key", "value": "{{metricsKey}}" }],
+        "url": "{{baseUrl}}/api/metrics"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "metricsKey", "value": "" }
+  ]
+}
