@@ -63,7 +63,7 @@ class EmailService:
         safe_from = sanitize_header_value(self._settings.smtp_from, 254)
 
         message = MIMEMultipart("alternative")
-        message["From"] = formataddr(("Dev Landing", safe_from))
+        message["From"] = formataddr(("Олег", safe_from))
         message["To"] = safe_to
         message["Subject"] = safe_subject
         message.attach(MIMEText(html, "html", "utf-8"))

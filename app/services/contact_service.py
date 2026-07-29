@@ -35,7 +35,7 @@ class ContactService:
         )
 
         return ContactResponse(
-            message="Обращение принято. Копия отправлена на ваш email.",
+            message="Принял. Копию кинул тебе на почту.",
             data=ContactData(id=contact_id, created_at=created_at, ai=ai_result),
         )
 

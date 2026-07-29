@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="utf-8"><title>Новое обращение</title></head>
+<head><meta charset="utf-8"><title>Сообщение с сайта</title></head>
 <body style="font-family: Arial, sans-serif; color: #1a1a1a; line-height: 1.5;">
-  <h2>Новое обращение с лендинга</h2>
+  <h2>Написал кто-то с формы</h2>
   <p><strong>Имя:</strong> {{ name }}</p>
   <p><strong>Телефон:</strong> {{ phone }}</p>
   <p><strong>Email:</strong> {{ email }}</p>
-  <p><strong>Комментарий:</strong></p>
-  <blockquote style="border-left: 3px solid #0f766e; padding-left: 12px; margin: 0;">{{ comment }}</blockquote>
+  <p><strong>Текст:</strong></p>
+  <blockquote style="border-left: 3px solid #1b6b4a; padding-left: 12px; margin: 0;">{{ comment }}</blockquote>
   {% if ai %}
   <hr>
-  <h3>AI-анализ</h3>
-  <p><strong>Тип:</strong> {{ ai.request_type }}</p>
-  <p><strong>Тональность:</strong> {{ ai.sentiment }} ({{ ai.sentiment_score }})</p>
-  <p><strong>Кратко:</strong> {{ ai.summary }}</p>
-  <p><strong>Источник:</strong> {{ ai.source }}</p>
+  <p style="color:#555;font-size:14px;"><strong>Разбор:</strong> {{ ai.request_type }} · {{ ai.sentiment }} ({{ ai.sentiment_score }}) · {{ ai.source }}</p>
+  <p style="color:#555;font-size:14px;">{{ ai.summary }}</p>
   {% endif %}
 </body>
 </html>

@@ -35,7 +35,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="Backend API для лендинга разработчика: форма обратной связи, AI-анализ, email, метрики.",
+        description="API формы обратной связи: валидация, почта, разбор комментария, метрики.",
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",

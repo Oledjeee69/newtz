@@ -3,7 +3,7 @@ const messageEl = document.getElementById("formMessage");
 const submitBtn = document.getElementById("submitBtn");
 const themeToggle = document.getElementById("themeToggle");
 
-const savedTheme = localStorage.getItem("theme") || "dark";
+const savedTheme = localStorage.getItem("theme") || "light";
 document.documentElement.setAttribute("data-theme", savedTheme);
 
 themeToggle.addEventListener("click", () => {
@@ -20,9 +20,8 @@ function buildPayload(formEl) {
     email: (raw.email || "").trim(),
     comment: (raw.comment || "").trim(),
   };
-  // honeypot не отправляем, если пустой
-  if (raw.company_fax && raw.company_fax.trim()) {
-    payload.company_fax = raw.company_fax.trim();
+  if (raw.company_fax && String(raw.company_fax).trim()) {
+    payload.company_fax = String(raw.company_fax).trim();
   }
   return payload;
 }
@@ -30,13 +29,13 @@ function buildPayload(formEl) {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   messageEl.textContent = "";
-  messageEl.className = "form__message";
+  messageEl.className = "form__msg";
   submitBtn.disabled = true;
 
   const payload = buildPayload(form);
 
   if (payload.comment.length < 10) {
-    messageEl.textContent = "Комментарий должен быть не короче 10 символов";
+    messageEl.textContent = "Напиши чуть подробнее (хотя бы 10 символов)";
     messageEl.classList.add("error");
     submitBtn.disabled = false;
     return;
@@ -56,11 +55,11 @@ form.addEventListener("submit", async (e) => {
       throw new Error(details || body?.error?.message || "Ошибка отправки");
     }
 
-    messageEl.textContent = body.message || "Отправлено!";
+    messageEl.textContent = body.message || "Ок, отправил. Проверь почту.";
     messageEl.classList.add("success");
     form.reset();
   } catch (err) {
-    messageEl.textContent = err.message || "Не удалось отправить";
+    messageEl.textContent = err.message || "Что-то пошло не так, попробуй ещё раз";
     messageEl.classList.add("error");
   } finally {
     submitBtn.disabled = false;

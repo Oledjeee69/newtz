@@ -19,17 +19,16 @@ COLLAB_WORDS = {"сотруднич", "проект", "партнёр", "пар�
 QUESTION_WORDS = {"как", "сколько", "можно", "вопрос", "подскаж", "?"}
 FEEDBACK_WORDS = {"отзыв", "feedback", "мнение", "совет"}
 
-ANALYSIS_PROMPT = """Ты — ассистент backend-сервиса лендинга разработчика.
-Проанализируй комментарий пользователя и верни ТОЛЬКО валидный JSON без markdown.
+ANALYSIS_PROMPT = """Разбери сообщение с формы контактов. Ответ — только JSON, без markdown и пояснений.
 
-Поля:
-- sentiment: positive | neutral | negative
-- sentiment_score: число от 0 до 1
-- request_type: job_offer | collaboration | question | feedback | spam_suspicion | other
-- summary: краткое описание на русском (до 120 символов)
-- suggested_reply: вежливый ответ пользователю на русском (2-3 предложения)
+Нужные ключи:
+sentiment (positive|neutral|negative),
+sentiment_score (0..1),
+request_type (job_offer|collaboration|question|feedback|spam_suspicion|other),
+summary (по-русски, коротко),
+suggested_reply (2–3 предложения, нормальный тон, без канцелярита).
 
-Комментарий:
+Текст:
 \"\"\"
 {comment}
 \"\"\"
