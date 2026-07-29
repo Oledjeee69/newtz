@@ -28,10 +28,12 @@ class ContactService:
         ai_fallback = ai_result.source == "fallback"
 
         email_ok = True
+        email_error = ""
         try:
             await self._email.send_contact_emails(payload, ai_result)
         except EmailDeliveryError as exc:
             email_ok = False
+            email_error = exc.message
             logger.warning("Email delivery failed, contact still accepted: %s", exc.message)
 
         contact_id = f"cnt_{uuid.uuid4().hex[:12]}"
@@ -46,7 +48,7 @@ class ContactService:
         message = (
             "Обращение принято. Копия отправлена на ваш email."
             if email_ok
-            else "Обращение принято. Письмо не отправилось (проверьте BREVO_API_KEY / почтовый провайдер)."
+            else f"Обращение принято. Письмо не отправилось: {email_error}"
         )
 
         return ContactResponse(

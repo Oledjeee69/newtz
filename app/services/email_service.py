@@ -48,8 +48,11 @@ class EmailService:
                 errors.append(f"{to}: {exc.message}")
                 logger.warning("Email failed for %s: %s", to, exc.message)
 
-        if errors:
+        if len(errors) == 2:
             raise EmailDeliveryError("; ".join(errors))
+        if errors:
+            # Одно из двух ушло — заявку считаем доставленной частично
+            logger.warning("Partial email delivery: %s", "; ".join(errors))
 
     def _owner_content(self, contact: ContactRequest, ai: AIAnalysis | None) -> tuple[str, str]:
         template = self._env.get_template("owner_notification.html")
@@ -89,7 +92,7 @@ class EmailService:
         payload = {
             "sender": {
                 "name": self._settings.brevo_sender_name,
-                "email": self._settings.brevo_sender_email,
+                "email": self._settings.brevo_sender_email.strip(),
             },
             "to": [{"email": to}],
             "subject": subject,
@@ -100,16 +103,21 @@ class EmailService:
                 response = await client.post(
                     "https://api.brevo.com/v3/smtp/email",
                     headers={
-                        "api-key": self._settings.brevo_api_key,
+                        "api-key": self._settings.brevo_api_key.strip(),
                         "Content-Type": "application/json",
                         "Accept": "application/json",
                     },
                     json=payload,
                 )
-                response.raise_for_status()
+                if response.is_error:
+                    detail = response.text[:300]
+                    logger.error("Brevo HTTP %s to %s: %s", response.status_code, to, detail)
+                    raise EmailDeliveryError(f"Brevo {response.status_code}: {detail}")
+        except EmailDeliveryError:
+            raise
         except Exception as exc:
             logger.exception("Brevo send failed to %s", to)
-            raise EmailDeliveryError("Не удалось отправить email через Brevo") from exc
+            raise EmailDeliveryError(f"Не удалось отправить email через Brevo: {exc}") from exc
 
     async def _send_resend(self, to: str, subject: str, html: str) -> None:
         payload = {
