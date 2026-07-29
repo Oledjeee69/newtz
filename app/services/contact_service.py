@@ -46,7 +46,7 @@ class ContactService:
         message = (
             "Обращение принято. Копия отправлена на ваш email."
             if email_ok
-            else "Обращение принято. Письмо не отправилось (на Railway SMTP часто блокируют — используйте Resend)."
+            else "Обращение принято. Письмо не отправилось (проверьте BREVO_API_KEY / почтовый провайдер)."
         )
 
         return ContactResponse(

@@ -31,13 +31,25 @@ class EmailService:
 
     async def send_contact_emails(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
         if not self._settings.email_configured:
-            raise EmailDeliveryError("Email не настроен (SMTP или RESEND_API_KEY).")
+            raise EmailDeliveryError("Email не настроен (BREVO_API_KEY, RESEND_API_KEY или SMTP).")
 
         owner_html, owner_subject = self._owner_content(contact, ai)
         user_html, user_subject = self._user_content(contact, ai)
 
-        await self._deliver(self._settings.owner_email, owner_subject, owner_html)
-        await self._deliver(str(contact.email), user_subject, user_html)
+        # Отправляем независимо: одно письмо не должно блокировать второе
+        errors: list[str] = []
+        for to, subject, html in (
+            (self._settings.owner_email, owner_subject, owner_html),
+            (str(contact.email), user_subject, user_html),
+        ):
+            try:
+                await self._deliver(to, subject, html)
+            except EmailDeliveryError as exc:
+                errors.append(f"{to}: {exc.message}")
+                logger.warning("Email failed for %s: %s", to, exc.message)
+
+        if errors:
+            raise EmailDeliveryError("; ".join(errors))
 
     def _owner_content(self, contact: ContactRequest, ai: AIAnalysis | None) -> tuple[str, str]:
         template = self._env.get_template("owner_notification.html")
@@ -64,11 +76,40 @@ class EmailService:
         return html, "Спасибо за обращение!"
 
     async def _deliver(self, to: str, subject: str, html: str) -> None:
-        # Railway часто блокирует исходящий SMTP :587 — Resend (HTTP) надёжнее
+        # HTTP-провайдеры первыми: Railway часто режет SMTP :587
+        if self._settings.brevo_configured:
+            await self._send_brevo(to, subject, html)
+            return
         if self._settings.resend_configured:
             await self._send_resend(to, subject, html)
             return
         await self._send_smtp(to, subject, html)
+
+    async def _send_brevo(self, to: str, subject: str, html: str) -> None:
+        payload = {
+            "sender": {
+                "name": self._settings.brevo_sender_name,
+                "email": self._settings.brevo_sender_email,
+            },
+            "to": [{"email": to}],
+            "subject": subject,
+            "htmlContent": html,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.post(
+                    "https://api.brevo.com/v3/smtp/email",
+                    headers={
+                        "api-key": self._settings.brevo_api_key,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    json=payload,
+                )
+                response.raise_for_status()
+        except Exception as exc:
+            logger.exception("Brevo send failed to %s", to)
+            raise EmailDeliveryError("Не удалось отправить email через Brevo") from exc
 
     async def _send_resend(self, to: str, subject: str, html: str) -> None:
         payload = {

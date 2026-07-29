@@ -29,7 +29,8 @@ uvicorn app.main:app --reload --port 8000
 
 Слои обычные: роуты тонкие, логика в сервисах, JSON на диске вместо БД (для такого объёма хватает). Если AI отвалился — форма всё равно уходит, в ответе `source: fallback`.
 
-Письма: локально через Gmail SMTP; на Railway SMTP часто таймаутится — лучше `RESEND_API_KEY` (HTTP). Если почта упала, заявка всё равно принимается.
+Письма: на Railway — `BREVO_API_KEY` (HTTP, без своего домена: подтверждаешь только sender-email).
+Локально можно Gmail SMTP. Если почта упала, заявка всё равно принимается.
 
 ## Env (коротко)
 
@@ -39,7 +40,7 @@ uvicorn app.main:app --reload --port 8000
 - `ALLOWED_ORIGINS` = твой публичный URL
 - `METRICS_API_KEY` = нормальный секрет
 - `DEBUG=false`
-- `RESEND_API_KEY` — иначе письма с Railway не уйдут (SMTP блокируют)
+- `BREVO_API_KEY` + `BREVO_SENDER_EMAIL` — иначе письма с Railway не уйдут (SMTP блокируют)
 - `OWNER_EMAIL` — куда слать заявки
 
 ## Деплой

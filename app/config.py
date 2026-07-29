@@ -26,7 +26,12 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     owner_email: str = ""
 
-    # Resend — HTTP API, работает на Railway (SMTP часто блокируют)
+    # Brevo — HTTP API, Single Sender без своего домена (удобно на Railway)
+    brevo_api_key: str = ""
+    brevo_sender_email: str = ""
+    brevo_sender_name: str = "Contact API"
+
+    # Resend — HTTP API (без домена шлёт только на email аккаунта)
     resend_api_key: str = ""
     resend_from: str = "Contact API <onboarding@resend.dev>"
 
@@ -57,12 +62,18 @@ class Settings(BaseSettings):
         )
 
     @property
+    def brevo_configured(self) -> bool:
+        return bool(
+            self.brevo_api_key.strip() and self.brevo_sender_email.strip() and self.owner_email.strip()
+        )
+
+    @property
     def resend_configured(self) -> bool:
         return bool(self.resend_api_key.strip() and self.resend_from.strip() and self.owner_email.strip())
 
     @property
     def email_configured(self) -> bool:
-        return self.resend_configured or self.smtp_configured
+        return self.brevo_configured or self.resend_configured or self.smtp_configured
 
     @property
     def openai_configured(self) -> bool:

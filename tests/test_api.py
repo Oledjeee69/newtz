@@ -16,6 +16,8 @@ def _smtp_env(monkeypatch, tmp_path):
     monkeypatch.setenv("SMTP_PASSWORD", "app-password")
     monkeypatch.setenv("SMTP_FROM", "test@gmail.com")
     monkeypatch.setenv("OWNER_EMAIL", "owner@gmail.com")
+    monkeypatch.setenv("BREVO_API_KEY", "")
+    monkeypatch.setenv("RESEND_API_KEY", "")
     monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("GROQ_API_KEY", "")
     monkeypatch.setenv("GEMINI_API_KEY", "")

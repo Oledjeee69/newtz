@@ -83,6 +83,7 @@ class ContactResponse(BaseModel):
 
 class HealthChecks(BaseModel):
     smtp_configured: bool
+    brevo_configured: bool
     resend_configured: bool
     email_configured: bool
     openai_configured: bool

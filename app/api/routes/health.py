@@ -25,6 +25,7 @@ async def health_check() -> HealthResponse:
 
     checks = HealthChecks(
         smtp_configured=settings.smtp_configured,
+        brevo_configured=settings.brevo_configured,
         resend_configured=settings.resend_configured,
         email_configured=settings.email_configured,
         openai_configured=settings.openai_configured,
