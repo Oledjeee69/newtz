@@ -1,12 +1,16 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from app.config import Settings
+from app.core.exceptions import EmailDeliveryError
 from app.repositories.metrics_repository import MetricsRepository
 from app.repositories.rate_limit_repository import RateLimitRepository
 from app.schemas.contact import ContactData, ContactRequest, ContactResponse
 from app.services.ai_service import AIService
 from app.services.email_service import EmailService
+
+logger = logging.getLogger(__name__)
 
 
 class ContactService:
@@ -23,7 +27,12 @@ class ContactService:
         ai_result = await self._ai.analyze(payload.comment, payload.name)
         ai_fallback = ai_result.source == "fallback"
 
-        await self._email.send_contact_emails(payload, ai_result)
+        email_ok = True
+        try:
+            await self._email.send_contact_emails(payload, ai_result)
+        except EmailDeliveryError as exc:
+            email_ok = False
+            logger.warning("Email delivery failed, contact still accepted: %s", exc.message)
 
         contact_id = f"cnt_{uuid.uuid4().hex[:12]}"
         created_at = datetime.now(timezone.utc).isoformat()
@@ -34,8 +43,14 @@ class ContactService:
             ai_fallback=ai_fallback,
         )
 
+        message = (
+            "Обращение принято. Копия отправлена на ваш email."
+            if email_ok
+            else "Обращение принято. Письмо не отправилось (на Railway SMTP часто блокируют — используйте Resend)."
+        )
+
         return ContactResponse(
-            message="Принял. Копию кинул тебе на почту.",
+            message=message,
             data=ContactData(id=contact_id, created_at=created_at, ai=ai_result),
         )
 

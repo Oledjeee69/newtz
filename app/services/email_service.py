@@ -3,6 +3,7 @@ from email.utils import formataddr
 from pathlib import Path
 
 import aiosmtplib
+import httpx
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.config import Settings
@@ -13,6 +14,7 @@ from app.schemas.contact import AIAnalysis, ContactRequest
 logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates" / "email"
+SMTP_TIMEOUT = 12
 
 
 class EmailService:
@@ -23,14 +25,21 @@ class EmailService:
             autoescape=select_autoescape(["html", "xml"]),
         )
 
+    @property
+    def _smtp_password(self) -> str:
+        return self._settings.smtp_password.replace(" ", "")
+
     async def send_contact_emails(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
-        if not self._settings.smtp_configured:
-            raise EmailDeliveryError("SMTP не настроен. Проверьте переменные окружения.")
+        if not self._settings.email_configured:
+            raise EmailDeliveryError("Email не настроен (SMTP или RESEND_API_KEY).")
 
-        await self._send_owner(contact, ai)
-        await self._send_user_copy(contact, ai)
+        owner_html, owner_subject = self._owner_content(contact, ai)
+        user_html, user_subject = self._user_content(contact, ai)
 
-    async def _send_owner(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
+        await self._deliver(self._settings.owner_email, owner_subject, owner_html)
+        await self._deliver(str(contact.email), user_subject, user_html)
+
+    def _owner_content(self, contact: ContactRequest, ai: AIAnalysis | None) -> tuple[str, str]:
         template = self._env.get_template("owner_notification.html")
         request_type = ai.request_type if ai else "other"
         html = template.render(
@@ -41,10 +50,10 @@ class EmailService:
             ai=ai,
             request_type=request_type,
         )
-        subject = sanitize_header_value(f"[Лендинг] Новое обращение: {request_type}")
-        await self._send(self._settings.owner_email, subject, html)
+        subject = sanitize_header_value(f"[Contact] Новое обращение: {request_type}")
+        return html, subject
 
-    async def _send_user_copy(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
+    def _user_content(self, contact: ContactRequest, ai: AIAnalysis | None) -> tuple[str, str]:
         template = self._env.get_template("user_confirmation.html")
         reply_text = (
             ai.suggested_reply
@@ -52,9 +61,38 @@ class EmailService:
             else f"Здравствуйте, {contact.name}! Спасибо за обращение. Я свяжусь с вами в ближайшее время."
         )
         html = template.render(name=contact.name, reply_text=reply_text)
-        await self._send(str(contact.email), "Спасибо за обращение!", html)
+        return html, "Спасибо за обращение!"
 
-    async def _send(self, to: str, subject: str, html: str) -> None:
+    async def _deliver(self, to: str, subject: str, html: str) -> None:
+        # Railway часто блокирует исходящий SMTP :587 — Resend (HTTP) надёжнее
+        if self._settings.resend_configured:
+            await self._send_resend(to, subject, html)
+            return
+        await self._send_smtp(to, subject, html)
+
+    async def _send_resend(self, to: str, subject: str, html: str) -> None:
+        payload = {
+            "from": self._settings.resend_from,
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {self._settings.resend_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+                response.raise_for_status()
+        except Exception as exc:
+            logger.exception("Resend send failed to %s", to)
+            raise EmailDeliveryError("Не удалось отправить email через Resend") from exc
+
+    async def _send_smtp(self, to: str, subject: str, html: str) -> None:
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
 
@@ -63,7 +101,7 @@ class EmailService:
         safe_from = sanitize_header_value(self._settings.smtp_from, 254)
 
         message = MIMEMultipart("alternative")
-        message["From"] = formataddr(("Олег", safe_from))
+        message["From"] = formataddr(("Contact API", safe_from))
         message["To"] = safe_to
         message["Subject"] = safe_subject
         message.attach(MIMEText(html, "html", "utf-8"))
@@ -74,9 +112,12 @@ class EmailService:
                 hostname=self._settings.smtp_host,
                 port=self._settings.smtp_port,
                 username=self._settings.smtp_user,
-                password=self._settings.smtp_password,
+                password=self._smtp_password,
                 start_tls=True,
+                timeout=SMTP_TIMEOUT,
             )
         except Exception as exc:
             logger.exception("SMTP send failed to %s", to)
-            raise EmailDeliveryError("Не удалось отправить email") from exc
+            raise EmailDeliveryError(
+                "SMTP недоступен с хостинга (часто блокируют порт 587). Добавьте RESEND_API_KEY."
+            ) from exc

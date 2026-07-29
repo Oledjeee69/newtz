@@ -25,6 +25,8 @@ async def health_check() -> HealthResponse:
 
     checks = HealthChecks(
         smtp_configured=settings.smtp_configured,
+        resend_configured=settings.resend_configured,
+        email_configured=settings.email_configured,
         openai_configured=settings.openai_configured,
         groq_configured=settings.groq_configured,
         gemini_configured=settings.gemini_configured,
@@ -32,9 +34,7 @@ async def health_check() -> HealthResponse:
         data_dir_writable=data_writable,
     )
 
-    status = "ok" if data_writable else "degraded"
-    if not settings.smtp_configured:
-        status = "degraded"
+    status = "ok" if data_writable and settings.email_configured else "degraded"
 
     return HealthResponse(
         status=status,

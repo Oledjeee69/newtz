@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     owner_email: str = ""
 
+    # Resend — HTTP API, работает на Railway (SMTP часто блокируют)
+    resend_api_key: str = ""
+    resend_from: str = "Contact API <onboarding@resend.dev>"
+
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     openai_timeout_seconds: int = 5
@@ -48,7 +52,17 @@ class Settings(BaseSettings):
 
     @property
     def smtp_configured(self) -> bool:
-        return bool(self.smtp_host and self.smtp_user and self.smtp_password and self.smtp_from and self.owner_email)
+        return bool(
+            self.smtp_host and self.smtp_user and self.smtp_password and self.smtp_from and self.owner_email
+        )
+
+    @property
+    def resend_configured(self) -> bool:
+        return bool(self.resend_api_key.strip() and self.resend_from.strip() and self.owner_email.strip())
+
+    @property
+    def email_configured(self) -> bool:
+        return self.resend_configured or self.smtp_configured
 
     @property
     def openai_configured(self) -> bool:

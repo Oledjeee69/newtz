@@ -57,6 +57,30 @@ async def test_contact_validation_error(client):
 
 
 @pytest.mark.asyncio
+async def test_contact_accepted_when_email_fails(client):
+    from app.core.exceptions import EmailDeliveryError
+
+    payload = {
+        "name": "Иван Тестов",
+        "phone": "+7 999 123-45-67",
+        "email": "ivan@example.com",
+        "comment": "Интересует сотрудничество по backend-проекту на FastAPI",
+    }
+
+    with patch(
+        "app.services.email_service.EmailService.send_contact_emails",
+        new_callable=AsyncMock,
+        side_effect=EmailDeliveryError("SMTP down"),
+    ):
+        res = await client.post("/api/contact", json=payload)
+
+    assert res.status_code == 201
+    body = res.json()
+    assert body["success"] is True
+    assert "принят" in body["message"].lower()
+
+
+@pytest.mark.asyncio
 async def test_contact_success_with_email_mock(client):
     payload = {
         "name": "Иван Тестов",

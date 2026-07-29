@@ -29,13 +29,13 @@ function buildPayload(formEl) {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   messageEl.textContent = "";
-  messageEl.className = "form__msg";
+  messageEl.className = "form__message";
   submitBtn.disabled = true;
 
   const payload = buildPayload(form);
 
   if (payload.comment.length < 10) {
-    messageEl.textContent = "Напиши чуть подробнее (хотя бы 10 символов)";
+    messageEl.textContent = "Комментарий должен быть не короче 10 символов";
     messageEl.classList.add("error");
     submitBtn.disabled = false;
     return;
@@ -55,11 +55,11 @@ form.addEventListener("submit", async (e) => {
       throw new Error(details || body?.error?.message || "Ошибка отправки");
     }
 
-    messageEl.textContent = body.message || "Ок, отправил. Проверь почту.";
+    messageEl.textContent = body.message || "Отправлено";
     messageEl.classList.add("success");
     form.reset();
   } catch (err) {
-    messageEl.textContent = err.message || "Что-то пошло не так, попробуй ещё раз";
+    messageEl.textContent = err.message || "Не удалось отправить";
     messageEl.classList.add("error");
   } finally {
     submitBtn.disabled = false;

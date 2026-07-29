@@ -83,6 +83,8 @@ class ContactResponse(BaseModel):
 
 class HealthChecks(BaseModel):
     smtp_configured: bool
+    resend_configured: bool
+    email_configured: bool
     openai_configured: bool
     groq_configured: bool
     gemini_configured: bool

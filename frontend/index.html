@@ -3,87 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Олег — backend &amp; фронт</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <title>Contact API</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <div class="bg" aria-hidden="true"></div>
-
   <header class="header">
-    <div class="wrap header__row">
-      <a class="brand" href="#">Олег<span>/</span>dev</a>
+    <div class="container header__inner">
+      <a class="logo" href="#">Contact<span>API</span></a>
       <nav>
-        <a href="#work">Проекты</a>
-        <a href="#contact">Написать</a>
+        <a href="#about">О проекте</a>
+        <a href="#contact">Форма</a>
+        <a href="/docs" target="_blank" rel="noopener">Swagger</a>
       </nav>
-      <button type="button" id="themeToggle" class="theme-btn" aria-label="Сменить тему">тема</button>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Тема">◐</button>
     </div>
   </header>
 
   <main>
-    <section class="hero wrap">
-      <p class="brand-mark">Олег</p>
-      <h1>Делаю сайты и API,<br />которые не разваливаются после демо</h1>
-      <p class="lead">
-        Верстка, JS/TS, Python/PHP, SQL. Фриланс ~1.5 года — формы, CMS, боты, мелкий бэк.
-        Ниже форма реально уходит на мой API и на почту.
+    <section class="hero container">
+      <p class="hero__badge">Demo</p>
+      <h1>Форма обратной связи на FastAPI</h1>
+      <p class="hero__text">
+        Валидация, rate limit, письмо на почту и разбор комментария (AI или fallback).
+        Ниже — рабочая форма на этот же API.
       </p>
-      <div class="cta">
-        <a class="btn" href="#contact">Написать</a>
-        <a class="btn btn--ghost" href="https://github.com/Oledjeee69" target="_blank" rel="noopener">GitHub</a>
-      </div>
+      <a class="btn" href="#contact">Открыть форму</a>
     </section>
 
-    <section id="work" class="block wrap">
-      <h2>Что уже есть</h2>
-      <ul class="list">
-        <li>
-          <a href="https://wishlistt.vercel.app/" target="_blank" rel="noopener">Wishlist</a>
-          — Next.js, Prisma, Postgres. CRUD и деплой на Vercel.
-        </li>
-        <li>
-          Telegram-бот <code>@hleb_ed_bot</code> — Python, Docker, деплой через Git.
-        </li>
-        <li>
-          Этот репозиторий — форма + FastAPI: SMTP, лимит запросов, AI по комментарию (или свой fallback).
-        </li>
-      </ul>
+    <section id="about" class="section container">
+      <h2>О проекте</h2>
+      <p>
+        Небольшой backend-сервис: <code>POST /api/contact</code>, health, metrics.
+        Данные в JSON-файлах, деплой через Docker / Railway.
+      </p>
     </section>
 
-    <section id="contact" class="block wrap">
-      <h2>Написать мне</h2>
-      <p class="sub">Имя, телефон, почта и пара строк — отвечу по делу.</p>
-      <form id="contactForm" class="form" novalidate>
-        <div class="form__grid">
-          <label>Имя
-            <input name="name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Как к вам обращаться" />
-          </label>
-          <label>Телефон
-            <input name="phone" required autocomplete="tel" placeholder="+7 …" />
-          </label>
+    <section id="contact" class="section container">
+      <h2>Связаться</h2>
+      <form id="contactForm" class="form">
+        <div class="form__row">
+          <label>Имя<input name="name" required minlength="2" maxlength="100" placeholder="Иван" /></label>
+          <label>Телефон<input name="phone" required placeholder="+7 999 123-45-67" /></label>
         </div>
-        <label>Email
-          <input name="email" type="email" required autocomplete="email" placeholder="you@mail.com" />
-        </label>
-        <label>Сообщение
-          <textarea name="comment" required minlength="10" maxlength="2000" rows="5" placeholder="О задаче, сроках, стеке…"></textarea>
-        </label>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
+        <label>Комментарий<textarea name="comment" required minlength="10" maxlength="2000" rows="5" placeholder="Расскажите о проекте..."></textarea></label>
         <input type="text" name="company_fax" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <button type="submit" class="btn" id="submitBtn">Отправить</button>
-        <p id="formMessage" class="form__msg" role="status"></p>
+        <p id="formMessage" class="form__message" role="status"></p>
       </form>
     </section>
   </main>
 
-  <footer class="footer wrap">
-    <p>
-      <a href="/docs" target="_blank" rel="noopener">Swagger</a>
-      ·
-      <a href="https://github.com/Oledjeee69" target="_blank" rel="noopener">GitHub</a>
-    </p>
+  <footer class="footer container">
+    <p><a href="/docs" target="_blank" rel="noopener">API Docs</a> · <a href="/api/health" target="_blank" rel="noopener">Health</a></p>
   </footer>
 
   <script src="/static/app.js"></script>

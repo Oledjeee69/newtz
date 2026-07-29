@@ -14,6 +14,7 @@ from app.middleware.request_logger import RequestLoggingMiddleware
 from app.middleware.security import SecurityMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
@@ -35,7 +36,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="API формы обратной связи: валидация, почта, разбор комментария, метрики.",
+        description="Contact form API: validation, email, comment analysis, metrics.",
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",

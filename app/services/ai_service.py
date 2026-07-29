@@ -66,7 +66,7 @@ class AIService:
                     continue
                 return AIAnalysis(**result, source=provider)
             except Exception as exc:
-                logger.warning("%s AI failed, trying next provider: %s", provider, exc)
+                logger.warning("%s AI failed, trying next provider: %s", provider, type(exc).__name__)
 
         return self._analyze_fallback(comment, user_name)
 
@@ -114,10 +114,7 @@ class AIService:
 
     async def _call_gemini(self, comment: str) -> dict[str, Any]:
         model = self._settings.gemini_model
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key={self._settings.gemini_api_key}"
-        )
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         payload = {
             "contents": [{"parts": [{"text": ANALYSIS_PROMPT.format(comment=comment)}]}],
             "generationConfig": {
@@ -127,8 +124,17 @@ class AIService:
         }
         timeout = httpx.Timeout(self._settings.ai_timeout_seconds)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
+            response = await client.post(
+                url,
+                headers={"x-goog-api-key": self._settings.gemini_api_key},
+                json=payload,
+            )
+            if response.status_code >= 400:
+                raise httpx.HTTPStatusError(
+                    f"Gemini HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
+                )
             content = response.json()["candidates"][0]["content"]["parts"][0]["text"]
             return parse_ai_json(content)
 
