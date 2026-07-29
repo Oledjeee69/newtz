@@ -32,7 +32,7 @@ class EmailService:
     async def send_contact_emails(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
         if not self._settings.email_configured:
             raise EmailDeliveryError(
-                "Email не настроен (MAILJET_*, BREVO_API_KEY, RESEND_API_KEY или SMTP)."
+                "Email не настроен (EMAIL_WEBHOOK_URL, MAILJET_*, BREVO, RESEND или SMTP)."
             )
 
         owner_html, owner_subject = self._owner_content(contact, ai)
@@ -81,8 +81,10 @@ class EmailService:
         return html, "Спасибо за обращение!"
 
     async def _deliver(self, to: str, subject: str, html: str) -> None:
-        # HTTP-провайдеры первыми: Railway часто режет SMTP :587
-        # Mailjet раньше Brevo: у Brevo часто «SMTP not activated»
+        # HTTP первыми: Railway режет SMTP. Webhook (Apps Script/Gmail) — бесплатно.
+        if self._settings.email_webhook_configured:
+            await self._send_webhook(to, subject, html)
+            return
         if self._settings.mailjet_configured:
             await self._send_mailjet(to, subject, html)
             return
@@ -93,6 +95,40 @@ class EmailService:
             await self._send_resend(to, subject, html)
             return
         await self._send_smtp(to, subject, html)
+
+    async def _send_webhook(self, to: str, subject: str, html: str) -> None:
+        payload = {
+            "secret": self._settings.email_webhook_secret,
+            "to": to,
+            "subject": subject,
+            "html": html,
+            "fromName": "Contact API",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+                response = await client.post(
+                    self._settings.email_webhook_url.strip(),
+                    headers={"Content-Type": "application/json"},
+                    json=payload,
+                )
+                if response.is_error:
+                    detail = response.text[:300]
+                    logger.error("Email webhook HTTP %s to %s: %s", response.status_code, to, detail)
+                    raise EmailDeliveryError(f"Webhook {response.status_code}: {detail}")
+                # Apps Script может вернуть 200 с ok:false
+                try:
+                    body = response.json()
+                    if isinstance(body, dict) and body.get("ok") is False:
+                        raise EmailDeliveryError(f"Webhook rejected: {body.get('error', 'ok=false')}")
+                except EmailDeliveryError:
+                    raise
+                except Exception:
+                    pass
+        except EmailDeliveryError:
+            raise
+        except Exception as exc:
+            logger.exception("Email webhook failed to %s", to)
+            raise EmailDeliveryError(f"Не удалось отправить через EMAIL_WEBHOOK_URL: {exc}") from exc
 
     async def _send_mailjet(self, to: str, subject: str, html: str) -> None:
         payload = {

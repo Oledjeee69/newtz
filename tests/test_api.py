@@ -19,6 +19,7 @@ def _smtp_env(monkeypatch, tmp_path):
     monkeypatch.setenv("BREVO_API_KEY", "")
     monkeypatch.setenv("MAILJET_API_KEY", "")
     monkeypatch.setenv("MAILJET_API_SECRET", "")
+    monkeypatch.setenv("EMAIL_WEBHOOK_URL", "")
     monkeypatch.setenv("RESEND_API_KEY", "")
     monkeypatch.setenv("OPENAI_API_KEY", "")
     monkeypatch.setenv("GROQ_API_KEY", "")

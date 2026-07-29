@@ -26,7 +26,12 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     owner_email: str = ""
 
-    # Mailjet — HTTP API, обычно без ожидания саппорта (рекомендуется)
+    # Бесплатный HTTP-релей через Google Apps Script (Gmail)
+    # https://script.google.com → вставить скрипт из README → Deploy as web app
+    email_webhook_url: str = ""
+    email_webhook_secret: str = ""
+
+    # Mailjet — HTTP API
     mailjet_api_key: str = ""
     mailjet_api_secret: str = ""
     mailjet_sender_email: str = ""
@@ -68,6 +73,10 @@ class Settings(BaseSettings):
         )
 
     @property
+    def email_webhook_configured(self) -> bool:
+        return bool(self.email_webhook_url.strip() and self.owner_email.strip())
+
+    @property
     def mailjet_configured(self) -> bool:
         return bool(
             self.mailjet_api_key.strip()
@@ -89,7 +98,8 @@ class Settings(BaseSettings):
     @property
     def email_configured(self) -> bool:
         return (
-            self.mailjet_configured
+            self.email_webhook_configured
+            or self.mailjet_configured
             or self.brevo_configured
             or self.resend_configured
             or self.smtp_configured
