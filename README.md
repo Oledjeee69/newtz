@@ -29,8 +29,8 @@ uvicorn app.main:app --reload --port 8000
 
 Слои обычные: роуты тонкие, логика в сервисах, JSON на диске вместо БД (для такого объёма хватает). Если AI отвалился — форма всё равно уходит, в ответе `source: fallback`.
 
-Письма: на Railway — `BREVO_API_KEY` (HTTP, без своего домена: подтверждаешь только sender-email).
-Локально можно Gmail SMTP. Если почта упала, заявка всё равно принимается.
+Письма: на Railway — `MAILJET_API_KEY` + `MAILJET_API_SECRET` (HTTP, без своего домена).
+Brevo часто ждёт активации у саппорта. Локально можно Gmail SMTP. Если почта упала, заявка всё равно принимается.
 
 ## Env (коротко)
 
@@ -40,7 +40,7 @@ uvicorn app.main:app --reload --port 8000
 - `ALLOWED_ORIGINS` = твой публичный URL
 - `METRICS_API_KEY` = нормальный секрет
 - `DEBUG=false`
-- `BREVO_API_KEY` + `BREVO_SENDER_EMAIL` — иначе письма с Railway не уйдут (SMTP блокируют)
+- `MAILJET_API_KEY` + `MAILJET_API_SECRET` + `MAILJET_SENDER_EMAIL` — иначе письма с Railway не уйдут
 - `OWNER_EMAIL` — куда слать заявки
 
 ## Деплой

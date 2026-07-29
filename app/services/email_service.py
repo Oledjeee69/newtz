@@ -31,7 +31,9 @@ class EmailService:
 
     async def send_contact_emails(self, contact: ContactRequest, ai: AIAnalysis | None) -> None:
         if not self._settings.email_configured:
-            raise EmailDeliveryError("Email не настроен (BREVO_API_KEY, RESEND_API_KEY или SMTP).")
+            raise EmailDeliveryError(
+                "Email не настроен (MAILJET_*, BREVO_API_KEY, RESEND_API_KEY или SMTP)."
+            )
 
         owner_html, owner_subject = self._owner_content(contact, ai)
         user_html, user_subject = self._user_content(contact, ai)
@@ -80,6 +82,10 @@ class EmailService:
 
     async def _deliver(self, to: str, subject: str, html: str) -> None:
         # HTTP-провайдеры первыми: Railway часто режет SMTP :587
+        # Mailjet раньше Brevo: у Brevo часто «SMTP not activated»
+        if self._settings.mailjet_configured:
+            await self._send_mailjet(to, subject, html)
+            return
         if self._settings.brevo_configured:
             await self._send_brevo(to, subject, html)
             return
@@ -87,6 +93,41 @@ class EmailService:
             await self._send_resend(to, subject, html)
             return
         await self._send_smtp(to, subject, html)
+
+    async def _send_mailjet(self, to: str, subject: str, html: str) -> None:
+        payload = {
+            "Messages": [
+                {
+                    "From": {
+                        "Email": self._settings.mailjet_sender_email.strip(),
+                        "Name": self._settings.mailjet_sender_name,
+                    },
+                    "To": [{"Email": to}],
+                    "Subject": subject,
+                    "HTMLPart": html,
+                }
+            ]
+        }
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.post(
+                    "https://api.mailjet.com/v3.1/send",
+                    auth=(
+                        self._settings.mailjet_api_key.strip(),
+                        self._settings.mailjet_api_secret.strip(),
+                    ),
+                    headers={"Content-Type": "application/json"},
+                    json=payload,
+                )
+                if response.is_error:
+                    detail = response.text[:300]
+                    logger.error("Mailjet HTTP %s to %s: %s", response.status_code, to, detail)
+                    raise EmailDeliveryError(f"Mailjet {response.status_code}: {detail}")
+        except EmailDeliveryError:
+            raise
+        except Exception as exc:
+            logger.exception("Mailjet send failed to %s", to)
+            raise EmailDeliveryError(f"Не удалось отправить email через Mailjet: {exc}") from exc
 
     async def _send_brevo(self, to: str, subject: str, html: str) -> None:
         payload = {

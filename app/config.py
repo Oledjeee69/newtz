@@ -26,7 +26,13 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     owner_email: str = ""
 
-    # Brevo — HTTP API, Single Sender без своего домена (удобно на Railway)
+    # Mailjet — HTTP API, обычно без ожидания саппорта (рекомендуется)
+    mailjet_api_key: str = ""
+    mailjet_api_secret: str = ""
+    mailjet_sender_email: str = ""
+    mailjet_sender_name: str = "Contact API"
+
+    # Brevo — часто ждёт активации SMTP у саппорта
     brevo_api_key: str = ""
     brevo_sender_email: str = ""
     brevo_sender_name: str = "Contact API"
@@ -62,6 +68,15 @@ class Settings(BaseSettings):
         )
 
     @property
+    def mailjet_configured(self) -> bool:
+        return bool(
+            self.mailjet_api_key.strip()
+            and self.mailjet_api_secret.strip()
+            and self.mailjet_sender_email.strip()
+            and self.owner_email.strip()
+        )
+
+    @property
     def brevo_configured(self) -> bool:
         return bool(
             self.brevo_api_key.strip() and self.brevo_sender_email.strip() and self.owner_email.strip()
@@ -73,7 +88,12 @@ class Settings(BaseSettings):
 
     @property
     def email_configured(self) -> bool:
-        return self.brevo_configured or self.resend_configured or self.smtp_configured
+        return (
+            self.mailjet_configured
+            or self.brevo_configured
+            or self.resend_configured
+            or self.smtp_configured
+        )
 
     @property
     def openai_configured(self) -> bool:
